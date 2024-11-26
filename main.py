@@ -1,7 +1,8 @@
-import subprocess, sys, os, time 
+import subprocess, sys, os 
 import contextlib
 
-from multiprocessing import Process, Queue
+from Checker import Checker
+from Dataset import *
 
 # Функция для проверки и установки библиотеки
 def check_and_install(package):
@@ -28,8 +29,27 @@ def run_labelme(label_file=None):
 
 def main(dataset_path, args) -> None:
     from check_label import check_label_polygon
-    for result in check_label_polygon(dataset_path):
-        run_labelme(result)
+
+    labels = LabelsPolygon(dataset_path, round=False)
+    dataset = DatasetImage(dataset_path, labels, extension="all", rotate=False)
+
+    if len(args) >= 1:
+        def filter_polyhon(polygons_dict: dict) -> str:
+            if len(polygons_dict.values()) != 23:
+                return "Неправильное количество полигонов"
+        
+        dbscan_path = args[0]
+
+        checker = Checker(dataset, filter_polyhon, dbscan_path)
+    else:
+        checker = Checker(dataset, check_label_polygon)
+
+    try:
+        for path in checker.searh_error():
+            run_labelme(path)
+
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == '__main__':
     check_and_install('matplotlib')

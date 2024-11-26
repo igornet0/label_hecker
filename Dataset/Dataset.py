@@ -3,6 +3,7 @@ from os import listdir, walk
 from os.path import join, isdir
 from typing import Union, Iterable
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 from .Label import *
 from .Labels import *
@@ -194,23 +195,45 @@ class DatasetImage(Dataset):
         return col
     
     @staticmethod
-    def show_img(img, label=None, polygon = False):
-        if polygon:
-            x, y = [], []
-            for i in range(1, 9):
-                if i % 2 == 1:
-                    x.append(label[i-1])
-                else:
-                    y.append(label[i-1])
-            for i in range(0, len(x), 2):
-                plt.plot(x[i:i+2], y[i:i+2], 'ro-')
-            plt.plot([x[0], x[3]], [y[0], y[3]], 'ro-')
-            plt.plot([x[1], x[2]], [y[1], y[2]], 'ro-')
+    def show_img(image, label=None, polygons_dict = None):
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.imshow(image)
         
-        if label:
-            plt.title(label)
-
-        plt.imshow(img)
+        # Случайные цвета для каждого полигона
+        random.seed(42)
+        colors = [
+            (random.random(), random.random(), random.random())
+            for _ in range(len(polygons_dict))
+        ]
+        
+        # Рисуем полигоны
+        for i, (polygon_name, coordinates) in enumerate(polygons_dict.items()):
+            # Получаем координаты вершин полигона
+            x_coords = coordinates[::2]
+            y_coords = coordinates[1::2]
+            
+            # Добавляем полигон на график
+            polygon = patches.Polygon(
+                xy=list(zip(x_coords, y_coords)),
+                closed=True,
+                edgecolor='black',
+                facecolor=colors[i],
+                alpha=0.5
+            )
+            ax.add_patch(polygon)
+            
+            # Выводим номер полигона
+            center_x = sum(x_coords) / len(x_coords)
+            center_y = sum(y_coords) / len(y_coords)
+            ax.text(
+                center_x, center_y, f"{polygon_name}",
+                color="black", fontsize=12, ha="center", va="center",
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none")
+            )
+        
+        # Настраиваем отображение
+        ax.set_title("Визуализация полигонов")
+        ax.axis("off")
         plt.show()
         
     @property
