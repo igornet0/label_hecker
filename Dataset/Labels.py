@@ -8,7 +8,7 @@ from .Label import *
 
 class Labels:
 
-    def __init__(self, labels, output_shape: int = None, filter: Callable = None, map: Callable = None) -> None:
+    def __init__(self, labels, output_shape: int = None, default_on=False, default=None, filter: Callable = None, map: Callable = None) -> None:
         
         self.labels = labels
         
@@ -17,6 +17,8 @@ class Labels:
         self.filter = filter
         self.map = map
 
+        self.default_on = default_on
+        self.default = default
         self.buffer = {}
 
     def clear_buffer(self):
@@ -29,8 +31,11 @@ class Labels:
             return self.labels[key]
         elif isinstance(self.labels, function):
             return self.labels(key)
-        else:
-            raise ValueError(f"Labels type {type(self.labels)} not supported {key=}")
+      
+        if self.default_on:
+            return self.to_type(self.default)
+        
+        raise ValueError(f"Labels type {type(self.labels)} not supported {key=}")
 
     def __getitem__(self, key: Any) -> Any:
         if key in self.buffer.keys():
@@ -64,9 +69,9 @@ class Labels:
                 return self.to_type(None)
 
         if self.map is not None:
-            label = self.map(label)
+            label = self.to_type(self.map(label))
 
-        return self.to_type(label)
+        return label
     
     def get_labels(self):
         return self.labels
@@ -79,12 +84,12 @@ class Labels:
 class LabelsFile(Labels):
 
     def __init__(self, labels: str = "labels", extension: str = ".json",
-                 output_shape: int = None, filter: Callable = None, map: Callable = None) -> None:
+                 output_shape: int = None, default_on=False, default=None, filter: Callable = None, map: Callable = None) -> None:
         
         if not os.path.exists(labels):
             raise ValueError("Path labels not found")
 
-        super().__init__(labels, output_shape, filter, map)
+        super().__init__(labels, output_shape, default_on, default, filter, map)
 
         self.set_extension(extension)
 
@@ -100,8 +105,8 @@ class LabelsFile(Labels):
         if isinstance(data, Image) or isinstance(data, File):
             if f"{data.name_file}{self.extension}" in listdir(data.path_data):
                 return self.to_type(join(data.path_data, f"{data.name_file}{self.extension}"))
-        else:
-            return super().get(data)
+               
+        return super().get(data)
         
     def to_type(self, label):
         if isinstance(label, Label):
@@ -130,9 +135,9 @@ class LabelsFile(Labels):
 class LabelsPolygon(LabelsFile):
 
     def __init__(self, labels: Union[str, Callable, List, Label] = "labels", extension: str = ".json",
-                 output_shape: tuple = None, filter: Callable = None, map: Callable = None, round: bool = True) -> None:
+                 output_shape: tuple = None, default_on=False, default=None, filter: Callable = None, map: Callable = None, round: bool = True) -> None:
         
-        super().__init__(labels, extension, output_shape, filter, map)
+        super().__init__(labels, extension, output_shape, default_on, default, filter, map)
 
         self.round = round
 

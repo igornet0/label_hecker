@@ -3,7 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-dataset_new/
+dataset_*/
+*.7z
 
 # C extensions
 *.so

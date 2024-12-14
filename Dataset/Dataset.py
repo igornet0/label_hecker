@@ -46,7 +46,10 @@ class Dataset:
             label = self.get_label(data)
 
             if not label.get():
-                continue
+                if self.labels.default_on:
+                    label = self.labels.default
+                else:
+                    continue
 
             yield data, label
             

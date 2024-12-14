@@ -27,13 +27,25 @@ def run_labelme(label_file=None):
 
     return result.stdout
 
+def stata(dataset: DatasetImage, filter):
+    checker = Checker(dataset, filter)
+    count_error = checker.count_error()
+    dataset_len = len(list(dataset.get_images()))
+    print("Количество ошибок: ", count_error)
+    print("Всего файлов: ", dataset_len)
+    print("Без ошибок: ", dataset_len - count_error)
+
 def main(dataset_path, args) -> None:
     from check_label import check_label_polygon
 
-    labels = LabelsPolygon(dataset_path, round=False)
+    labels = LabelsPolygon(dataset_path, round=False, default_on=True)
     dataset = DatasetImage(dataset_path, labels, extension="all", rotate=False)
 
     if len(args) >= 1:
+        if args[0] == "stata":
+            stata(dataset, check_label_polygon)
+            return
+        
         def filter_polyhon(polygons_dict: dict) -> str:
             if len(polygons_dict.values()) != 23:
                 return "Неправильное количество полигонов"
@@ -43,7 +55,6 @@ def main(dataset_path, args) -> None:
         checker = Checker(dataset, filter_polyhon, dbscan_path)
     else:
         checker = Checker(dataset, check_label_polygon)
-
     try:
         for path in checker.searh_error():
             run_labelme(path)

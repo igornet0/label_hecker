@@ -1,6 +1,6 @@
 import numpy as np
 
-from Dataset import DatasetImage
+from Dataset import DatasetImage, Image
 from dbscan import dbscan_load, dbscan_clustering_polygon
 
 
@@ -46,14 +46,26 @@ class Checker:
         print(message)
         print()
 
+    def count_error(self):
+        count = 0
+        for image, labelP in self.dataset:
+            if labelP is None:
+                labelP = image
+            result = self.filter(labelP)
+            if result:
+                count += 1
+
+        return count
+
     def searh_error(self):
         
         if self.dbscan:
             yield from self.check_dbscan()
         
         print("Поиск ошибок...")
-        for _, labelP in self.dataset:
-
+        for image, labelP in self.dataset:
+            if labelP is None:
+                labelP = image
             result = self.filter(labelP)
 
             if result:
@@ -61,6 +73,9 @@ class Checker:
             else:
                 continue
 
-            yield f"{labelP.path_data}\{labelP.name_file}.json"
+            if isinstance(labelP, Image):
+                yield f"{labelP.path_data}\{labelP.name_file}.png"
+            else:
+                yield f"{labelP.path_data}\{labelP.name_file}.json"
 
         print("Поиск ошибок завершен")
