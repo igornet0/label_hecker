@@ -73,7 +73,7 @@ class LabelF(Label):
 
 class LabelP(LabelF):
 
-    def __init__(self, label:dict = None, round: bool = True) -> None:
+    def __init__(self, label:Union[dict, str] = None, round: bool = True) -> None:
 
         self.flag_round = round
         self.resize_flag = False

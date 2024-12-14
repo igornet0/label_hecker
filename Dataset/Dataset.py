@@ -4,9 +4,11 @@ from os.path import join, isdir
 from typing import Union, Iterable
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import multiprocessing as mp
 
 from .Label import *
 from .Labels import *
+from .Pool import *
 from .Data import *
 
 class Dataset:
@@ -134,6 +136,26 @@ class DatasetImage(Dataset):
     def get_shuffle_path(self):
         return self.shuffle_path
     
+    def get_data_label(self, path: str = None) -> iter:
+        if path is not None:
+            if not isdir(path):
+                raise ValueError(f"Path {path} is not a directory")
+            
+        if self.labels.get_labels() is None:
+            raise ValueError("Labels not found")
+
+        for data in self.get_data(path=path):
+
+            label = self.get_label(data)
+
+            if not label.get():
+                if self.labels.default_on:
+                    label = self.labels.default
+                else:
+                    continue
+
+            yield data, label
+    
     def get_images(self, path: str = None) -> iter:
 
         if path is not None:
@@ -167,11 +189,11 @@ class DatasetImage(Dataset):
 
                 yield image
 
-    def get_data(self):
+    def get_data(self, path: str = None):
         if self.get_shuffle_path():
             dataset = self.get_data_from_path_shuffle()
         else:
-            dataset = self.get_images()
+            dataset = self.get_images(path=path)
 
         for data in dataset:
             if self.rotate:
@@ -180,6 +202,22 @@ class DatasetImage(Dataset):
                     yield data
             else:
                 yield data
+
+    def create_process(self, count_process: int = 1, func: Callable = None, args: tuple = None, kwargs: dict = None):
+        process = mp.Pool(count_process)
+
+        if func is None:
+            func = self.get_data
+
+        if isinstance(args, list):
+            result = process.map(func, iterable=args)
+
+        else:
+            process.apply_async(func, args=args, kwds=kwargs)
+            process.join()
+            result = process.get()
+            
+        return result
 
     def get_output_shape(self):
         return self.desired_size

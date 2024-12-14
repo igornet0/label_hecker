@@ -29,11 +29,12 @@ def run_labelme(label_file=None):
 
 def stata(dataset: DatasetImage, filter):
     checker = Checker(dataset, filter)
-    count_error = checker.count_error()
-    dataset_len = len(list(dataset.get_images()))
-    print("Количество ошибок: ", count_error)
-    print("Всего файлов: ", dataset_len)
-    print("Без ошибок: ", dataset_len - count_error)
+    stata_checker(checker)
+
+def stata_checker(checker: Checker):
+    print("Count errors: ", checker.error_count)
+    print("Total files: ", checker.files_count)
+    print("Without errors: ", checker.files_count - checker.error_count)
 
 def main(dataset_path, args) -> None:
     from check_label import check_label_polygon
@@ -55,6 +56,7 @@ def main(dataset_path, args) -> None:
         checker = Checker(dataset, filter_polyhon, dbscan_path)
     else:
         checker = Checker(dataset, check_label_polygon)
+        stata_checker(checker)
     try:
         for path in checker.searh_error():
             run_labelme(path)
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     check_and_install('matplotlib')
     check_and_install('cv2')
     check_and_install('labelme')
+    check_and_install('sqlalchemy')
 
     skript, *args = sys.argv
 

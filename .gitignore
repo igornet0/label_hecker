@@ -5,6 +5,7 @@ __pycache__/
 
 dataset_*/
 *.7z
+*.db
 
 # C extensions
 *.so
